@@ -35,6 +35,10 @@ file `model.pickle`.
 """
 
 from kumparanian import ds
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn import svm
+from joblib import dump, load
 
 # Import your libraries here
 # Example:
@@ -47,32 +51,42 @@ class Model:
         """
         You can add more parameter here to initialize your model
         """
-        pass
+        with open('id.stopwords.02.01.2016.txt') as f:
+            self.stopword = f.readlines()
+        self.stopword = [line.rstrip('\n') for line in self.stopword]
+        self.tfidf_vect = TfidfVectorizer()
+        self.clf = svm.LinearSVC(class_weight='balanced')
+
+    def preprocessing(self,content):
+        word_split = content.split(' ')
+        result = ['' for word in word_split if '\n' in word]
+        result = [word if word.isalpha() else 0 for word in word_split ]
+        result = [word for word in result if word not in self.stopword]
+        result = ' '.join(str(e) for e in result)
+        return result
 
     def train(self):
         """
         NOTE: Implement your training procedure in this method.
         """
+        df = pd.read_csv('data.csv')
+        df.dropna(inplace=True)
+        df.article_content = df.article_content.str.lower()
+        df.article_content = df.article_content.apply(self.preprocessing)
+        self.tfidf_vect.fit(df.article_content)
+        train_x_tfidf = self.tfidf_vect.transform(df.article_content)     
+        self.clf.fit(train_x_tfidf,df.article_topic)
 
-        # Examples; psuedocode
-        # data = read_dataset("file.csv")
-        # self.network = torch.RNN ...
-        # self.network.train(data)
-
-        raise NotImplementedError  # Delete this line
 
     def predict(self, input):
         """
         NOTE: Implement your predict procedure in this method.
         """
+        input_vect = self.tfidf_vect.transform([input])
+        result = self.clf.predict(input_vect)
 
-        # Examples; psuedocode
-        # processed_input = process_input(input)
-        # output = self.network.forward(processed_input)
-        # label = get_label(output)
-        # return label
+        return result[0]
 
-        raise NotImplementedError  # Delete this line
 
     def save(self):
         """
