@@ -39,7 +39,6 @@ from kumparanian import ds
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn import svm
-from joblib import dump, load
 
 
 class Model:
